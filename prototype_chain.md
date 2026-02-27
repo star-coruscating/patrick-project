@@ -50,6 +50,13 @@ const sum = new Function('a', 'b', 'return a + b')
 
 **当访问一个对象成员时 先看对象自身有没有 如果没有 依次在原型链上找**
 
+继承
+
+instanceof
+a instanceof b 表示
+a所处的原型链上 是否有b的原型
+
+
 补充一点：原型对象上还有一个 `constructor` 属性，**反向指回构造函数**，这样铁三角才真正闭合：
 
 ```
