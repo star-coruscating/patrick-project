@@ -46,9 +46,12 @@ ES6 几乎重塑了 JavaScript 的编码方式：
 
 
 -----------------------------------------------------------------
-1. let const
+**1. let const**
+
 首先作用域的概念 由全局作用域 函数作用域（其实还有一个eval作用域 但是由于可维护性很差 不推荐使用 不去了解） 扩充了一个块级作用域
+
 【全局作用域】存在一个知识点 如果没有声明一个变量 而是直接给变量赋值 在非严格模式下 该变量会自动变成全局变量
+
 【块级作用域】概念的完整表述: 
 针对于通过let或者const关键字声明的变量来说 由一对大括号{}包裹的作用域就叫块级作用域 
     比如if, for...    ==>Chapter 作用域和作用域链
@@ -56,3 +59,76 @@ ES6 几乎重塑了 JavaScript 的编码方式：
 【变量提升】概念的完整表述: 
   通过var关键字定义的变量 会将变量的声明 提升至当前作用域的最顶端
   注意 函数的声明也会被提升至当前作用域顶端 并且如果函数声明和变量声明同名 那么函数声明的优先级更高
+
+```javascript
+;(function () {
+  console.log(typeof foo)
+  console.log(typeof bar)
+  var foo = 'HELLO'
+  var bar = function () {
+    return 'world'
+  }
+
+  function foo() {
+    return 'good'
+  }
+
+  console.log(foo, typeof foo)
+})()
+
+//output:
+//function
+//undefined
+//HELLO string
+```
+
+
+**2. 数组**
+
+1. for...of ==> 迭代器
+2. 数组的flat()
+3. new Array(10).fill(1).map(...)
+
+**3. 对象**
+
+1. 扩展运算符 spread
+2. 解构 destructuring
+   平常用的较多的
+   ```javascript
+   const { a, b, c } = obj; // const a = obj.a; const b = obj.b; const c = obj.c
+   ```
+   上面这种其实是一种简写 需要能够知道完整版怎么写
+   ```javascript
+   const { prop1: x, prop2: y, prop3: z } = obj;  // const x = obj.prop1; const y = obj.prop2; const z = obj.prop3
+   ```
+3. 属性描述符 property descriptor ==> vue原理中会用到 Object.defineProperty
+4. 方法的速写
+   ```javascript
+   const obj = {
+    sum: function(a, b) {
+      return a+b;
+    },
+    random: function(min, max) {
+     //...
+    }
+   }
+   ```
+
+   速写:
+   
+   ```javascript
+   const obj = {
+     sum(a, b) {
+       return a+b
+     },
+     random(min, max) {
+       //...
+     }
+   }
+   ```
+5. Set Map
+  Map和对象都是键值对 区别是什么？
+
+
+**4. 函数**
+
