@@ -131,4 +131,12 @@ ES6 几乎重塑了 JavaScript 的编码方式：
 
 
 **4. 函数**
+1. 箭头函数
+   1.不能使用new调
+   2.没有原型 prototype为undefined
+   3.没有arguments
+   4.没有this  （this是用的外部的this）
+2. 剩余参数（rest parameters）: ...args  注意args本身就是一个数组 可以用数组的一切方法
+3. 参数默认值
+4. Class
 
