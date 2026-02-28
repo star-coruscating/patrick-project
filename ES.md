@@ -128,6 +128,164 @@ ES6 几乎重塑了 JavaScript 的编码方式：
    ```
 5. Set Map
   Map和对象都是键值对 区别是什么？
+# Map 和对象的区别
+_Exported on 2026/2/28 at GMT+8 14:34:37 from Cursor (2.4.27)_
+
+---
+
+**User**
+
+Map 和 对象 都是键值对 区别是什么?
+
+---
+
+**Cursor**
+
+## Map 与 Object 的区别
+
+两者虽然都是键值对结构，但在多个维度上存在本质差异：
+
+### 1. 键的类型
+
+| 特性 | Object | Map |
+|---|---|---|
+| 键类型 | 只能是 `string` 或 `Symbol` | **任意类型**（对象、函数、数字等） |
+
+```javascript
+const map = new Map()
+const objKey = { id: 1 }
+map.set(objKey, 'value')    // 对象作为键
+map.set(42, 'number key')   // 数字作为键
+
+const obj = {}
+obj[objKey] = 'value'       // 被转为 "[object Object]" 字符串
+obj[42] = 'number key'      // 被转为 "42" 字符串
+```
+
+### 2. 键的顺序
+
+- **Object**：键的顺序不完全可靠（整数键会被排序，其他键按插入顺序）
+- **Map**：严格按照**插入顺序**迭代，保证有序
+
+### 3. 大小获取
+
+```javascript
+const map = new Map([['a', 1], ['b', 2]])
+map.size  // 2，直接获取 O(1)
+
+const obj = { a: 1, b: 2 }
+Object.keys(obj).length  // 2，需要遍历计算
+```
+
+### 4. 迭代方式
+
+```javascript
+// Map 原生可迭代
+for (const [key, value] of map) { }
+map.forEach((value, key) => { })
+
+// Object 需要借助静态方法
+for (const key of Object.keys(obj)) { }
+Object.entries(obj).forEach(([key, value]) => { })
+```
+
+### 5. 性能差异
+
+| 场景 | Object | Map |
+|---|---|---|
+| 频繁增删键值对 | 较慢 | **更快**（专门优化过） |
+| 大量数据存储 | 内存占用较大 | **内存效率更高** |
+| 属性查找 | 会沿原型链查找 | 只查自身，无原型链干扰 |
+
+### 6. 原型链污染
+
+```javascript
+const obj = {}
+obj.toString         // [Function: toString]，继承自原型
+'toString' in obj    // true，存在原型链污染风险
+
+const map = new Map()
+map.get('toString')  // undefined，干净无副作用
+```
+
+### 7. 序列化支持
+
+```javascript
+JSON.stringify({ a: 1 })       // '{"a":1}'，原生支持
+JSON.stringify(new Map([['a', 1]]))  // '{}'，不支持，需手动转换
+
+// Map 序列化需要额外处理
+JSON.stringify([...map.entries()])
+```
+
+### 何时选择 Map
+
+- 键不是字符串（如用对象、DOM 元素做键）
+- 需要频繁增删键值对
+- 需要保证严格的插入顺序
+- 需要直接获取 `.size`
+- 需要避免原型链干扰
+
+### 何时选择 Object
+
+- 键是固定的字符串，结构明确（如配置项、DTO）
+- 需要 JSON 序列化/反序列化
+- 需要解构赋值 `const { a, b } = obj`
+- 作为函数参数传递记录型数据
+
+简单来说：**Object 适合表示"记录/实体"，Map 适合表示"字典/映射表"**。
+
+
+也是正因为 Map具有 键的顺序严格按照插入的顺序 这一特性 可以用Map这个数据结构来实现 LRU缓存
+JS的Map 具有一个重要的特性 能够记住顺序
+相较于其他编程语言，这一特性属于天生的巨大优势，因为其他的语言为了维护顺序，通常需要使用双向链表(doubly linked list)
+该重大特性的一个具体落地 就是使用JS实现LRU缓存，其他的编程语言，为了实现LRU，一般需要组合数据结构（hashmap/dictionary + doubly linked list）
+而JS实现LRU缓存 进需要使用Map就可以
+
+```typescript
+export class LRUCache<T> {
+  private capacity: number;
+  private cache: Map<string, T>;
+
+  constructor (capacity: number) {
+    this.capacity = capacity;
+    this.cache = new Map();
+  }
+
+  get (key: string): T | undefined {
+    const value = this.cache.get(key);
+    if (value !== undefined) {
+      this.cache.delete(key);
+      this.cache.set(key, value);
+    }
+    return value;
+  }
+
+  put (key: string, value: T): void {
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    } else if (this.cache.size >= this.capacity) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey!);
+    }
+    this.cache.set(key, value);
+  }
+
+  size (): number {
+    return this.cache.size;
+  }
+
+  clear (): void {
+    this.cache.clear();
+  }
+}
+
+
+```
+
+
+
+
 
 
 **4. 函数**
