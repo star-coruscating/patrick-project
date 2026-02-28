@@ -552,3 +552,175 @@ if (d) { console.log("会执行！") }  // d 是对象，对象永远是 truthy
 `Object` 和 `Array` 被特殊设计为"双模式"函数，加不加 `new` 结果相同。而 `String`/`Number`/`Boolean` 不加 `new` 是**类型转换**，加 `new` 是**创建包装对象**，两者性质完全不同。
 
 
+-------------------------------------------------------------
+```javascript
+const myFunc = function sum(a, b) {
+  return a + b
+}
+
+const minus = new Function('a', 'b', 'return a - b')
+
+const arrow = () => {return 'arrow'}
+
+console.log(minus.__proto__ === Function.prototype) // true
+// console.log(sum.__proto__ === Function.prototype) // true
+console.log(myFunc.__proto__ === Function.prototype) // true
+console.log(arrow.__proto__ === Function.prototype) // true
+```
+
+
+# Function prototype behavior in JavaScript
+_Exported on 2026/2/28 at GMT+8 14:30:13 from Cursor (2.4.27)_
+
+---
+
+**User**
+
+@daily.js:32-41 
+
+分析这一块的代码
+我的问题是
+
+当sum这个具名函数 没有赋值给常量 myFunc
+此时可以使用函数名 sum.__proto__
+
+当赋值给常量以后 再去使用 sum.__proto__ 就会有报错
+只能使用 myFunc.__proto__
+
+这是什么原因
+
+---
+
+**Cursor**
+
+让我先看一下完整的文件内容。
+
+这是一个非常好的问题，涉及到 JavaScript 中**函数声明（Function Declaration）**和**具名函数表达式（Named Function Expression）**的本质区别。
+
+## 核心原因：作用域规则不同
+
+第 32 行的写法：
+
+```32:34:/home/0668001113/RDC/zte-studio-ai-ui-2/daily.js
+const myFunc = function sum(a, b) {
+  return a + b
+}
+```
+
+这是一个**具名函数表达式**（Named Function Expression），不是函数声明。
+
+关键规则是：
+
+**具名函数表达式的函数名（`sum`）只在函数体内部可见，外部作用域无法访问。**
+
+## 对比两种写法
+
+### 1. 函数声明 — `sum` 在外部可用
+
+```javascript
+function sum(a, b) {
+  return a + b
+}
+
+console.log(sum.__proto__ === Function.prototype) // true，正常工作
+```
+
+这是**函数声明**，`sum` 会被提升（hoisting）到当前作用域顶部，外部可以直接通过 `sum` 访问。
+
+### 2. 具名函数表达式 — `sum` 仅在内部可用
+
+```javascript
+const myFunc = function sum(a, b) {
+  // 这里面可以用 sum，比如递归调用 sum(a-1, b)
+  return a + b
+}
+
+console.log(myFunc.__proto__ === Function.prototype) // true
+console.log(sum.__proto__ === Function.prototype)    // ReferenceError: sum is not defined
+```
+
+这是**具名函数表达式**。`sum` 这个名字被绑定在函数自身的作用域里，**不会泄漏到外部作用域**。外部只能通过 `myFunc` 来引用这个函数。
+
+## 为什么要这样设计？
+
+这是 ECMAScript 规范的刻意设计，主要有两个目的：
+
+1. **避免污染外部作用域** — 函数表达式的本意是作为一个"值"赋给变量，函数名只是一个内部标识符，不应影响外层。
+
+2. **支持内部递归引用** — 具名函数表达式的名字在函数体内可用，方便递归调用而不依赖外部变量名：
+
+```javascript
+const factorial = function fact(n) {
+  if (n <= 1) return 1
+  return n * fact(n - 1)  // 内部可以用 fact
+}
+
+// 即使外部变量被重新赋值，递归也不会断
+const anotherRef = factorial
+// factorial = null  // 不影响 anotherRef 内部的递归
+```
+
+## 总结
+
+| 形式 | 语法 | 函数名外部可见？ |
+|---|---|---|
+| 函数声明 | `function sum() {}` | 可见 |
+| 具名函数表达式 | `const myFunc = function sum() {}` | 不可见，只能用 `myFunc` |
+| 匿名函数表达式 | `const myFunc = function() {}` | 无函数名，只能用 `myFunc` |
+
+所以你代码中第 39 行注释掉是正确的 — `sum` 在外部确实不存在，使用会抛出 `ReferenceError`。只有 `myFunc` 才是外部可访问的引用。
+
+---
+
+**User**
+
+所以函数声明 和 具名函数表达式的等号右边 是一模一样的
+
+---
+
+**Cursor**
+
+是的，你的观察非常敏锐。语法上它们确实**长得一模一样**：
+
+```javascript
+// 函数声明
+function sum(a, b) { return a + b }
+
+// 具名函数表达式（等号右边）
+const myFunc = function sum(a, b) { return a + b }
+//             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 这部分和上面完全相同
+```
+
+## 那 JS 引擎怎么区分的？
+
+靠的是**`function` 关键字出现的位置（上下文）**：
+
+- **语句开头**出现 `function` → 解析为**函数声明**（Declaration）
+- **表达式位置**出现 `function` → 解析为**函数表达式**（Expression）
+
+所谓"表达式位置"，就是出现在赋值号右边、括号里、作为参数等需要一个"值"的地方：
+
+```javascript
+// 1. 赋值右边 → 表达式
+const myFunc = function sum() {}
+
+// 2. 括号里 → 表达式
+(function sum() {})()
+
+// 3. 作为参数 → 表达式
+setTimeout(function sum() {}, 1000)
+
+// 4. 语句开头 → 声明
+function sum() {}
+```
+
+## 同样的文本，不同的命运
+
+可以类比中文的多义词——同样的字，放在不同句子里意思完全不同：
+
+> **"花"**
+> - "这朵**花**很美" → 名词
+> - "他**花**了100块" → 动词
+
+`function sum(a, b) { return a + b }` 也是一样，**同样的文本**，JS 引擎根据它出现的**语法位置**，决定把它当作声明还是表达式，从而决定 `sum` 是否注册到外部作用域。
+
