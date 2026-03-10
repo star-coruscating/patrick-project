@@ -71,6 +71,9 @@ a所处的原型链上 是否有b的原型
   实例 ------__proto__-----> 原型对象（同一个）
 ```
 
+
+<img width="1210" height="758" alt="image" src="https://github.com/user-attachments/assets/3a37cda0-8e88-4e52-a605-c94299bbb847" />
+
 ---
 
 ## 1. 指向同一地址的好处
