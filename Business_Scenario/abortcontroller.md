@@ -5,7 +5,36 @@ _Exported on 2026/3/16 at GMT+8 11:09:41 from Cursor (2.5.26)_
 
 **User**
 
-@/home/0668001113/RDC/zte-studio-ai-ui-2/src/packages/studio/views/setting/AddAppGray.vue:187-201 
+```javascript
+let controller: AbortController;
+const appLoading = ref(false);
+function filterApp (appName = '') {
+  if (controller) {
+    controller.abort();
+  }
+  controller = new AbortController();
+  const signal = controller.signal;
+  const param = {
+    appName,
+    currentPage: 1,
+    pageSize: MAX_PAGE_SIZE
+  };
+  appLoading.value = true;
+  getMyAppList(param, { signal })
+    .then((res: any) => {
+      appLoading.value = false;
+      if (res.data?.length) {
+        appList.value = res.data;
+      } else {
+        appList.value = [];
+      }
+    })
+    .catch(() => {
+      appLoading.value = false;
+      appList.value = [];
+    });
+}
+```
 
 分析一下 这里增加了 AbortController 并且在调用API的时候传递了signal
 使用时 每次进入方法 filterApp 都会先判断当前是否存在controller 如果有 就abort
