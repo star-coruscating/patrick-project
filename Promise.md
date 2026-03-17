@@ -494,6 +494,129 @@ Promise 由 A+规范 和 一些API组成
 
 
 
+-------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+**Promise相关 字节1面**
+# JavaScript task scheduler implementation
+_Exported on 2026/3/17 at GMT+8 9:57:10 from Cursor (2.5.26)_
+
+---
+
+**User**
+
+用JS实现一个类
+该类接受一个参数 表示最大可执行的多并发数量
+比如 
+const schedule = new Scheduler(2)
+则最大可多并发执行2个任务
+
+并且需要实现一个addTask方法
+该方法接受两个参数 第一个表示具体task 第二个表示优先级
+
+要求优先级越高的任务 越先执行
+
+class Scheduler() {
+constructor(concurrency) {
+   this.concurrency = concurrency
+}
+
+addTask(...) {...}
+}
+
+---
+
+**Cursor**
+
+我来在 `paraphernalia` 目录下创建一个 `scheduler.js` 文件，实现这个带优先级的并发调度器。
+
+让我先梳理一下设计思路：
+
+1. **优先级队列**：用数组维护待执行任务，按优先级排序，优先级高的排在前面
+2. **并发控制**：用计数器跟踪当前正在运行的任务数量
+3. **调度逻辑**：每次有空闲槽位时，从队列中取出优先级最高的任务执行；任务完成后自动调度下一个
+4. **返回 Promise**：`addTask` 返回一个 Promise，让调用方能获取任务结果
+
+我们来运行一下测试，验证并发控制和优先级调度是否正确：
+
+测试结果完全符合预期。我们来分析一下执行流程：
+
+## 执行流程分析
+
+| 时间 | 事件 | 说明 |
+|------|------|------|
+| 0ms | 任务A、B 开始 | 并发上限为2，A和B先到先执行 |
+| 1000ms | B结束 → C开始 | 腾出1个槽位，队列中 C(优先级10) > D(优先级5) > E(优先级1)，C最先执行 |
+| 1500ms | C结束 → D开始 | 队列中 D(优先级5) > E(优先级1)，D先执行 |
+| 2000ms | A结束 → E开始 | 最后一个任务 E 执行 |
+| 2000ms | D结束 | |
+| 2500ms | E结束 | 全部完成 |
+
+## 核心设计说明
+
+```1:45:src/views/paraphernalia/scheduler.js
+export default class Scheduler {
+  constructor(concurrency) {
+    this.maxConcurrency = concurrency
+    this.runningCount = 0
+    this.taskQueue = []
+  }
+
+  addTask(task, priority = 0) {
+    return new Promise((resolve, reject) => {
+      const wrappedTask = { task, priority, resolve, reject }
+      this._enqueue(wrappedTask)
+      this._schedule()
+    })
+  }
+
+  _enqueue(wrappedTask) {
+    let inserted = false
+    for (let i = 0; i < this.taskQueue.length; i++) {
+      if (wrappedTask.priority > this.taskQueue[i].priority) {
+        this.taskQueue.splice(i, 0, wrappedTask)
+        inserted = true
+        break
+      }
+    }
+    if (!inserted) {
+      this.taskQueue.push(wrappedTask)
+    }
+  }
+
+  _schedule() {
+    while (this.runningCount < this.maxConcurrency && this.taskQueue.length > 0) {
+      const { task, resolve, reject } = this.taskQueue.shift()
+      this.runningCount++
+      Promise.resolve(task())
+        .then(resolve, reject)
+        .finally(() => {
+          this.runningCount--
+          this._schedule()
+        })
+    }
+  }
+}
+```
+
+三个关键点：
+
+1. **`_enqueue`（插入排序）**：新任务按优先级插入到队列正确位置，保持队列始终有序（优先级高的在前）。
+2. **`_schedule`（调度器）**：每次调度时用 `while` 循环尽可能多地填满并发槽位，从队列头部（优先级最高）取任务执行。
+3. **`addTask` 返回 Promise**：将 `resolve/reject` 存入任务包装对象，任务执行完成后通过 `.then(resolve, reject)` 传递结果，调用方可以 `await` 获取任务返回值。
+
+
+
 
 
 
