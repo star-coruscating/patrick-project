@@ -1,4 +1,4 @@
-JSX (JavaScript XML) 是一种语法糖
+JSX (JavaScript XML) 是一种语法糖 JSX的本质是JS对象
 
 **在 Vue 中 使用 template 模板来描述页面**
 
@@ -30,3 +30,27 @@ function App() {}
 <div>Hello React~</div>
 ```
 ==> 这部分是JSX
+
+
+
+| JSX | Vue--template |
+| :--- | :--- |
+| 只允许一个根元素 但是可以使用 <>  </> | 从Vue3开始 可以支持多根元素 |
+| JS表达式 写在单大括号当中 {} | JS表达式 写在双大括号当中 {{ }} |
+| 标签的动态属性值 写在单大括号中 {} | 标签的动态属性值 使用： |
+| className="aa" | class="aa" |
+| {/* 这是一个注释 */} | <!-- 这是一个注释 --> |
+| JSX允许在模板中插入数组 数组会自动展开所有成员 | 通常使用v-for指令来渲染数组 |
+
+关于标签的动态属性 在template中可以直接通过v-bind来设置 而JSX中是通过单大括号来设置
+<img width="528" height="237" alt="image" src="https://github.com/user-attachments/assets/0afa3ee9-1082-4697-ac44-14c154cda0d4" />
+
+<img width="851" height="352" alt="image" src="https://github.com/user-attachments/assets/402cbd2b-d28a-4f66-9c92-b1002090abc1" />
+
+
+
+
+=====================
+思考 为什么在JSX中使用class会报错呢？
+原因在于JSX本质上是一个JS对象 而class对于JS而言是一个系统保留关键字 所以报错
+
