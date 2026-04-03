@@ -666,4 +666,63 @@ set[0];     // undefined  ❌
 
 所以你的理解非常准确：**可迭代是 `for...of` 的充分条件，但不是 `for` 循环的充分条件。** `for` 循环需要的是另一套东西——索引和长度。
 
+-------------------------------------------------------------------------------
+
+使用Map 实现LRU缓存
+
+
+Map definition from MDN: Map 对象保存键值对，并且能够记住键的原始插入顺序。
+
+JS的Map 具有一个重要的特性 能够记住顺序
+
+相较于其他编程语言，这一特性属于天生的巨大优势，因为其他的语言为了维护顺序，通常需要使用双向链表(doubly linked list)
+
+该重大特性的一个具体落地 就是使用JS实现LRU缓存，其他的编程语言，为了实现LRU，一般需要组合数据结构（hashmap/dictionary + doubly linked list）
+
+而JS实现LRU缓存 进需要使用Map就可以
+
+```typescript
+export class LRUCache<T> {
+  private capacity: number;
+  private cache: Map<string, T>;
+
+  constructor (capacity: number) {
+    this.capacity = capacity;
+    this.cache = new Map();
+  }
+
+  get (key: string): T | undefined {
+    const value = this.cache.get(key);
+    if (value !== undefined) {
+      this.cache.delete(key);
+      this.cache.set(key, value);
+    }
+    return value;
+  }
+
+  put (key: string, value: T): void {
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    } else if (this.cache.size >= this.capacity) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey!);
+    }
+    this.cache.set(key, value);
+  }
+
+  size (): number {
+    return this.cache.size;
+  }
+
+  clear (): void {
+    this.cache.clear();
+  }
+}
+
+```
+
+
+
+
+
 
