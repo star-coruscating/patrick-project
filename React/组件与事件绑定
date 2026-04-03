@@ -1,0 +1,39 @@
+React中可以使用两种方法来声明一个组件
+
+1）类
+```javascript
+class yourClassName extends React.Component {
+  render() {
+    return (
+      // 一段JSX代码
+    )
+  }
+}
+```
+
+
+2）函数
+
+```javascript
+function componentName() {
+  return (
+    // 一段JSX代码
+  )
+}
+```
+
+早期的函数组件 被称之为无状态组件 一般仅仅用来做纯UI的展示 不会有复杂的逻辑
+从React16.8推出hooks以后 现在更多的是使用函数组件了
+具体参照后期的hooks章节
+
+-----------------------------------
+为组件绑定事件
+
+```javascript
+<button onClick={clickHandler}>按钮</button>
+```
+
+注意 onClick 必须是驼峰命名
+
+
+
